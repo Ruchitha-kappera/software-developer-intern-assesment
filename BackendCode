@@ -1,0 +1,221 @@
+1)DataBaseConnection.java
+Code:
+
+package jdbc;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DataBaseConnection {
+    private static final String URL = "jdbc:mysql://localhost:3306/assignment"; 
+    private static final String USER = "root"; 
+    private static final String PASSWORD = "root";
+    
+	public static Connection getConnection() throws SQLException {
+		try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            return DriverManager.getConnection(URL, USER, PASSWORD);
+        } catch (ClassNotFoundException | SQLException e) {
+            System.out.println("Error: Unable to connect to the database.");
+            throw new SQLException("Database connection error", e);
+        }
+	}
+	
+}
+
+2)RegistrationCRUD.java
+Code:
+
+package jdbc;
+import java.sql.*;
+
+public class RegistrationCrud {
+    
+    // CREATE Operation: Insert a new user
+    public static void createUser(String name, String email, String dob, String phone, String address) {
+        String query = "INSERT INTO Registration (Name, Email, DateOfBirth, PhoneNumber, Address) VALUES (?, ?, ?, ?, ?)";
+        
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+             
+            stmt.setString(1, name);
+            stmt.setString(2, email);
+            stmt.setString(3, dob);
+            stmt.setString(4, phone);
+            stmt.setString(5, address);
+            
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("User created successfully.");
+            } else {
+                System.out.println("Error: User creation failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("SQL Error during CREATE operation: " + e.getMessage());
+        }
+    }
+
+    // READ Operation: Fetch a user by ID
+    public static void getUserById(int id) {
+        String query = "SELECT * FROM Registration WHERE ID = ?";
+        
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+             
+            stmt.setInt(1, id);
+            ResultSet resultSet = stmt.executeQuery();
+            
+            if (resultSet.next()) {
+                System.out.println("User found:");
+                System.out.println("ID: " + resultSet.getInt("ID"));
+                System.out.println("Name: " + resultSet.getString("Name"));
+                System.out.println("Email: " + resultSet.getString("Email"));
+                System.out.println("Date of Birth: " + resultSet.getString("DateOfBirth"));
+                System.out.println("Phone Number: " + resultSet.getString("PhoneNumber"));
+                System.out.println("Address: " + resultSet.getString("Address"));
+                System.out.println("Registered At: " + resultSet.getTimestamp("RegisteredAt"));
+            } else {
+                System.out.println("No user found with ID " + id);
+            }
+        } catch (SQLException e) {
+            System.out.println("SQL Error during READ operation: " + e.getMessage());
+        }
+    }
+
+    // UPDATE Operation: Update user details by ID
+    public static void updateUser(int id, String name, String email, String dob, String phone, String address) {
+        String query = "UPDATE Registration SET Name = ?, Email = ?, DateOfBirth = ?, PhoneNumber = ?, Address = ? WHERE ID = ?";
+        
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+             
+            stmt.setString(1, name);
+            stmt.setString(2, email);
+            stmt.setString(3, dob);
+            stmt.setString(4, phone);
+            stmt.setString(5, address);
+            stmt.setInt(6, id);
+            
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("User with ID " + id + " updated successfully.");
+            } else {
+                System.out.println("Error: User update failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("SQL Error during UPDATE operation: " + e.getMessage());
+        }
+    }
+
+    // DELETE Operation: Delete a user by ID
+    public static void deleteUser(int id) {
+        String query = "DELETE FROM Registration WHERE ID = ?";
+        
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+             
+            stmt.setInt(1, id);
+            int rowsAffected = stmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                System.out.println("User with ID " + id + " deleted successfully.");
+            } else {
+                System.out.println("Error: User deletion failed.");
+            }
+        } catch (SQLException e) {
+            System.out.println("SQL Error during DELETE operation: " + e.getMessage());
+        }
+    }
+}
+
+3)Main.java
+Code:
+
+package jdbc;
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        
+        while (true) {
+            // Display the options for the user
+            System.out.println("Choose an operation:");
+            System.out.println("1. CREATE user");
+            System.out.println("2. READ user");
+            System.out.println("3. UPDATE user");
+            System.out.println("4. DELETE user");
+            System.out.println("5. EXIT");
+            int choice = scanner.nextInt();
+            scanner.nextLine(); 
+
+            // Based on the choice, call the CRUD operation
+            switch (choice) {
+                case 1:
+                    // CREATE user
+                    System.out.println("Enter Name:");
+                    String name = scanner.nextLine();
+                    System.out.println("Enter Email:");
+                    String email = scanner.nextLine();
+                    System.out.println("Enter Date of Birth (YYYY-MM-DD):");
+                    String dob = scanner.nextLine();
+                    System.out.println("Enter Phone Number:");
+                    String phone = scanner.nextLine();
+                    System.out.println("Enter Address:");
+                    String address = scanner.nextLine();
+
+                    RegistrationCrud.createUser(name, email, dob, phone, address);
+                    break;
+
+                case 2:
+                    // READ user by ID
+                    System.out.println("Enter User ID to read:");
+                    int readId = scanner.nextInt();
+                    RegistrationCrud.getUserById(readId);
+                    break;
+
+                case 3:
+                    // UPDATE user by ID
+                    System.out.println("Enter User ID to update:");
+                    int updateId = scanner.nextInt();
+                    scanner.nextLine(); 
+                    System.out.println("Enter New Name (leave empty to keep unchanged):");
+                    String updateName = scanner.nextLine();
+                    System.out.println("Enter New Email (leave empty to keep unchanged):");
+                    String updateEmail = scanner.nextLine();
+                    System.out.println("Enter New Date of Birth (YYYY-MM-DD) (leave empty to keep unchanged):");
+                    String updateDob = scanner.nextLine();
+                    System.out.println("Enter New Phone Number (leave empty to keep unchanged):");
+                    String updatePhone = scanner.nextLine();
+                    System.out.println("Enter New Address (leave empty to keep unchanged):");
+                    String updateAddress = scanner.nextLine();
+
+                    // If the user doesn't provide a new value, we keep the old value
+                    updateName = updateName.isEmpty() ? null : updateName;
+                    updateEmail = updateEmail.isEmpty() ? null : updateEmail;
+                    updateDob = updateDob.isEmpty() ? null : updateDob;
+                    updatePhone = updatePhone.isEmpty() ? null : updatePhone;
+                    updateAddress = updateAddress.isEmpty() ? null : updateAddress;
+
+                    RegistrationCrud.updateUser(updateId, updateName, updateEmail, updateDob, updatePhone, updateAddress);
+                    break;
+
+                case 4:
+                    // DELETE user by ID
+                    System.out.println("Enter User ID to delete:");
+                    int deleteId = scanner.nextInt();
+                    RegistrationCrud.deleteUser(deleteId);
+                    break;
+
+                case 5:
+                    // Exit the program
+                    System.out.println("Exiting the program...");
+                    scanner.close();
+                    return;
+
+                default:
+                    System.out.println("Invalid choice, please try again.");
+            }
+        }
+    }
+}
